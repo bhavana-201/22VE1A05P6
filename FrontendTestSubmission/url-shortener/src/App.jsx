@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { nanoid } from "nanoid";
 import './App.css';
+import { Log } from "./utils/log";
 
 function App() {
   const [longUrl, setLongUrl] = useState("");
@@ -10,28 +11,27 @@ function App() {
   const [expired, setExpired] = useState(false);
 
   function handleUrl() {
-    if (!(longUrl.includes('https://') || longUrl.includes('http://'))) {
-      alert("Enter a valid URL starting with http:// or https://");
-      return;
+    try {
+      Log("frontend", "info", "urlShortener", "User submitted URL");
+      const shortCode = nanoid(4);
+      const shortUrl = `https://short.ly/${shortCode}`;
+      const createdAt = Date.now();
+      const expireAfter = time ? parseInt(time) * 60 * 1000 : null;
+      const entry = {
+        longUrl,
+        createdAt,
+        expireAfter,
+      };
+      localStorage.setItem(shortCode, JSON.stringify(entry));
+      setShortUrl(longUrl);
+      setCreatedTime(new Date(createdAt).toLocaleString());
+      setExpired(false);
+      setShortUrl(shortUrl);
+      Log("frontend", "info", "urlShortener", `Shortened ${longUrl} to ${shortUrl}`);
+    } catch (error) {
+      Log("frontend", "error", "urlShortener", `Shorten failed: ${error.message}`);
     }
-
-    const shortCode = nanoid(6);
-    const finalShort = `https://short.ly/${shortCode}`;
-    const createdAt = Date.now();
-    const expireAfter = time ? parseInt(time) * 60 * 1000 : null;
-
-    const entry = {
-      longUrl,
-      createdAt,
-      expireAfter,
-    };
-
-    localStorage.setItem(shortCode, JSON.stringify(entry));
-    setShortUrl(finalShort);
-    setCreatedTime(new Date(createdAt).toLocaleString());
-    setExpired(false);
-  }
-
+  };
   useEffect(() => {
     if (!shortUrl) return;
 
