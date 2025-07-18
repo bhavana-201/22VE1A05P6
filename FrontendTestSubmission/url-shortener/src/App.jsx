@@ -1,24 +1,47 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { nanoid } from "nanoid";
 import './App.css';
 
 function App() {
   const [longUrl, setLongUrl] = useState("");
   const [shortUrl, setShortUrl] = useState("");
-  const [time, setTime] = useState(null);
+  const [time, setTime] = useState("");
+  const [createdTime, setCreatedTime] = useState(null);
+  const [expired, setExpired] = useState(false);
 
   function handleUrl() {
     if (!(longUrl.includes('https://') || longUrl.includes('http://'))) {
-      alert("Please enter a valid URL starting with http:// or https://");
+      alert("Enter a valid URL starting with http:// or https://");
       return;
     }
 
     const shortCode = nanoid(6);
     const finalShort = `https://short.ly/${shortCode}`;
-    localStorage.setItem(shortCode, longUrl); // Local mapping
+    const createdAt = Date.now();
+    const expireAfter = time ? parseInt(time) * 60 * 1000 : null;
+
+    const entry = {
+      longUrl,
+      createdAt,
+      expireAfter,
+    };
+
+    localStorage.setItem(shortCode, JSON.stringify(entry));
     setShortUrl(finalShort);
-    setTime(new Date().toLocaleString());
+    setCreatedTime(new Date(createdAt).toLocaleString());
+    setExpired(false);
   }
+
+  useEffect(() => {
+    if (!shortUrl) return;
+
+    const code = shortUrl.split("/").pop();
+    const data = JSON.parse(localStorage.getItem(code));
+    if (data?.expireAfter && Date.now() > data.createdAt + data.expireAfter) {
+      setExpired(true);
+      localStorage.removeItem(code);
+    }
+  }, [shortUrl]);
 
   return (
     <div className="global-container">
@@ -38,9 +61,9 @@ function App() {
               onChange={(e) => setLongUrl(e.target.value)}
             />
             <input
-              type="text"
+              type="number"
               value={time}
-              placeholder="Enter time in mins(optional)"
+              placeholder="Expiry time in minutes (optional)"
               onChange={(e) => setTime(e.target.value)}
             />
 
@@ -53,14 +76,17 @@ function App() {
           </div>
 
           <button onClick={handleUrl}>Generate URL</button>
+          <a className="view-stats" href="/stats">🔍 View All Stats</a>
 
-          {shortUrl && (
+          {shortUrl && !expired && (
             <div className="stats-section">
-              <p><strong>URL Generated At:</strong> {time}</p>
-              <p><strong>Original URL :</strong> {longUrl} </p>
-              <p><strong>Shortened URL :</strong> {shortUrl}</p>
+              <p><strong>Created:</strong> {createdTime}</p>
+              <p><strong>Original:</strong> {longUrl}</p>
+              <p><strong>Shortened:</strong> <a href={longUrl} target="_blank" rel="noreferrer">{shortUrl}</a></p>
             </div>
           )}
+
+          {expired && <p><strong> This link has expired.</strong></p>}
         </main>
       </div>
     </div>
