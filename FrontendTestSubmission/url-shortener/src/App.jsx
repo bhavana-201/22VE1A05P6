@@ -4,13 +4,14 @@ import './App.css';
 import { Log } from "./utils/log";
 
 function App() {
+  //required States to handle user actions & info
   const [longUrl, setLongUrl] = useState("");
   const [shortUrl, setShortUrl] = useState("");
   const [time, setTime] = useState("");
   const [createdTime, setCreatedTime] = useState(null);
   const [expired, setExpired] = useState(false);
 
-  function handleUrl() {
+  function handleUrl() {//called on button 'click' event
     try {
       Log("frontend", "info", "urlShortener", "User submitted URL");
       const shortCode = nanoid(4);
@@ -32,18 +33,17 @@ function App() {
       Log("frontend", "error", "urlShortener", `Shorten failed: ${error.message}`);
     }
   };
-  useEffect(() => {
-    if (!shortUrl) return;
-
+  useEffect(() => {//to remove generated url after expiry
+    if (!shortUrl) return;// if no short url generated
     const code = shortUrl.split("/").pop();
     const data = JSON.parse(localStorage.getItem(code));
     if (data?.expireAfter && Date.now() > data.createdAt + data.expireAfter) {
       setExpired(true);
       localStorage.removeItem(code);
     }
-  }, [shortUrl]);
+  }, [shortUrl]);//renders after every shortURl update
 
-  return (
+  return (//page structure
     <div className="global-container">
       <nav>URL SHORTENER</nav>
 
@@ -77,12 +77,12 @@ function App() {
 
           <button onClick={handleUrl}>Generate URL</button>
           <a className="view-stats" href="/stats">🔍 View All Stats</a>
-
+          {/* once generated output is displayed right below */}
           {shortUrl && !expired && (
             <div className="stats-section">
               <p><strong>Created:</strong> {createdTime}</p>
               <p><strong>Original:</strong> {longUrl}</p>
-              <p><strong>Shortened:</strong> <a href={longUrl} target="_blank" rel="noreferrer">{shortUrl}</a></p>
+              <p><strong>Shortened:</strong> <a href={longUrl} target="_blank" >{shortUrl}</a></p>
             </div>
           )}
 
